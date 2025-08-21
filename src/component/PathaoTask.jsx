@@ -43,7 +43,7 @@ const PathaoTask = () => {
     ctx.lineTo(canvasRef.current?.width, mousePosition.y || 0);
     ctx.stroke();
   }, [mousePosition]);
-  const drawRoundRect = useCallback((rect) => {
+  const drawRoundedRect = useCallback((rect) => {
     const ctx = ctxRef.current;
     if (!ctx) return;
     const {
@@ -109,12 +109,14 @@ const PathaoTask = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#99c2ff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    rectangles.forEach((r) => drawRoundedRect(r));
     //created a new tempRect created
     if (tempRect) {
-      drawRoundRect(tempRect);
+      drawRoundedRect(tempRect);
     }
     drawCrosshair();
-  }, [drawCrosshair, tempRect, drawRoundRect]);
+  }, [drawCrosshair, tempRect, drawRoundedRect, rectangles]);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -194,8 +196,8 @@ const PathaoTask = () => {
       const { x, y } = getMousePosition(event);
       const state = drawingStateRef.current;
       const canvas = canvasRef.current;
-      if (canvas) {
-      }
+      // if (canvas) {
+      // }
       if (state.isDrawing) {
         state.isDrawing = false;
         const width = x - state.startX;
@@ -210,9 +212,7 @@ const PathaoTask = () => {
           topRightRadius: BORDER_RADIUS,
           bottomRightRadius: BORDER_RADIUS,
           bottomLeftRadius: BORDER_RADIUS,
-          originalWidth: Math.abs(width),
-          originalHeight: Math.abs(width),
-          fillColor: state.fillColor,
+          fileColor: state.fillColor,
         };
         setRectangles((prev) => [...prev, newRect]);
         const index = Math.floor(Math.random() * FILE_COLORS.length);
