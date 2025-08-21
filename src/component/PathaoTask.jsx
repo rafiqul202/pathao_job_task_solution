@@ -13,12 +13,19 @@ const PathaoTask = () => {
     selectRect: null,
     clickStartTime: 0,
     hasMove: false,
-    fillColor : "gray"
-  })
+    fillColor: "gray",
+  });
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0,
   });
+
+  const [rectangles, setRectangles] = useState([]);
+  const [tempRect, setTempRect] = useState(null);
+  const FILE_COLORS = ["#95eda7", "#ede695", "#919df2", "#f291f1"];
+  const BORDER_RADIUS = 15;
+  const MIN_SIZE = 35;
+  const CLICKTIME = 150;
 
   const drawCrosshair = useCallback(() => {
     const ctx = ctxRef.current;
@@ -36,7 +43,65 @@ const PathaoTask = () => {
     ctx.lineTo(canvasRef.current?.width, mousePosition.y || 0);
     ctx.stroke();
   }, [mousePosition]);
-
+  const drawRoundRect = useCallback((rect) => {
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+    const {
+      x,
+      y,
+      width,
+      height,
+      topLeftRadius,
+      topRightRadius,
+      bottomRightRadius,
+      bottomLeftRadius,
+    } = rect;
+    const tl = topLeftRadius || 0;
+    const tr = topRightRadius || 0;
+    const br = bottomRightRadius || 0;
+    const bl = bottomLeftRadius || 0;
+    ctx.beginPath();
+    // top left corner
+    ctx.moveTo(x + tl, y);
+    // top edge
+    ctx.lineTo(x + width - tr, y);
+    //top right corner
+    if (tr > 0) {
+      ctx.quadraticCurveTo(x + width, y, x + width, y + tr);
+    } else {
+      ctx.lineTo(x + width, y);
+    }
+    //right edge
+    ctx.lineTo(x + width, y + height - br);
+    //bottom right corner
+    if (br > 0) {
+      ctx.quadraticCurveTo(x + width, y + height, x + width - br, y + height);
+    } else {
+      ctx.lineTo(x + width, y + height);
+    }
+    //bottom edge
+    ctx.lineTo(x + bl, y + height);
+    //bottom left corner
+    if (bl > 0) {
+      ctx.quadraticCurveTo(x, y + height, x, y + height - bl);
+    } else {
+      ctx.lineTo(x, y + height);
+    }
+    //left edge
+    ctx.lineTo(x, y + tl);
+    //top left corner
+    if (tl > 0) {
+      ctx.quadraticCurveTo(x, y, x + tl, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = rect.fileColor;
+    ctx.fill();
+  }, []);
   const drawAll = useCallback(() => {
     const ctx = ctxRef.current;
     const canvas = canvasRef.current;
@@ -44,8 +109,12 @@ const PathaoTask = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#99c2ff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    //created a new tempRect created
+    if (tempRect) {
+      drawRoundRect(tempRect);
+    }
     drawCrosshair();
-  }, [drawCrosshair]);
+  }, [drawCrosshair, tempRect, drawRoundRect]);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -87,10 +156,45 @@ const PathaoTask = () => {
       // console.log("henleMouseMove Y", y);
       setMousePosition({ x, y });
       const state = drawingStateRef.current;
+      if (state.isDrawing) {
+        state.hasMove = true;
+        const width = x - state.startX;
+        const height = y - state.startY;
+        setTempRect({
+          x: Math.min(state.startX, x),
+          y: Math.min(state.startY, y),
+          width: Math.abs(width),
+          height: Math.abs(height),
+          topLeftRadius: BORDER_RADIUS,
+          topRightRadius: BORDER_RADIUS,
+          bottomRightRadius: BORDER_RADIUS,
+          bottomLeftRadius: BORDER_RADIUS,
+          fileColor: state.fillColor,
+        });
+      }
     },
     [getMousePosition]
   );
-  return <canvas onMouseMove={handleMouseMove} ref={canvasRef} />;
+
+  const handleMouseDown = useCallback(
+    (event) => {
+      const { x, y } = getMousePosition(event);
+      const state = drawingStateRef.current;
+      state.clickStartTime = Date.now();
+      state.hasMove = false;
+      state.isDrawing = true;
+      state.startX = x;
+      state.startY = y;
+    },
+    [getMousePosition]
+  );
+  return (
+    <canvas
+      onMouseMove={handleMouseMove}
+      onMouseDown={handleMouseDown}
+      ref={canvasRef}
+    />
+  );
 };
 
 export default PathaoTask;
