@@ -188,10 +188,45 @@ const PathaoTask = () => {
     },
     [getMousePosition]
   );
+
+  const handleMouseUp = useCallback(
+    (event) => {
+      const { x, y } = getMousePosition(event);
+      const state = drawingStateRef.current;
+      const canvas = canvasRef.current;
+      if (canvas) {
+      }
+      if (state.isDrawing) {
+        state.isDrawing = false;
+        const width = x - state.startX;
+        const height = y - state.startY;
+        const newRect = {
+          x: Math.min(state.startX, x),
+          y: Math.min(state.startY, y),
+          width: Math.abs(width),
+          height: Math.abs(height),
+          id: Date.now() + Math.random(),
+          topLeftRadius: BORDER_RADIUS,
+          topRightRadius: BORDER_RADIUS,
+          bottomRightRadius: BORDER_RADIUS,
+          bottomLeftRadius: BORDER_RADIUS,
+          originalWidth: Math.abs(width),
+          originalHeight: Math.abs(width),
+          fillColor: state.fillColor,
+        };
+        setRectangles((prev) => [...prev, newRect]);
+        const index = Math.floor(Math.random() * FILE_COLORS.length);
+        state.fillColor = FILE_COLORS[index];
+      }
+      setTempRect(null);
+    },
+    [getMousePosition, FILE_COLORS]
+  );
   return (
     <canvas
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       ref={canvasRef}
     />
   );
